@@ -1,0 +1,32 @@
+/*
+                                            CASO CORRECTO 2
+    Caso un poco mas complejo. Se realiza un while con una condicion un poco mas compleja, ademas de la asignacion compleja de valor booleano a la
+    variable bool (mediante true || false).
+*/
+
+main() {
+    // Declaracion y asignacion de variables
+    int ent = 8;
+    ent = ent - 3;
+    boolean bool = false;
+
+    while(bool == false){
+        ent = ent + 2;
+
+        if(ent > 12){
+            bool = (true);  //Se vuelve true --> sale del bucle
+        }
+    }
+
+    write(ent); //Deberia ser 13
+
+    ent = ent - (5 + 4);  //x deberia ser 4
+
+    int recuento = 0;
+
+    for(int idx = 0; idx < ent ; idx = idx + 1){
+        recuento = recuento + 1;
+    }
+
+    write(recuento);   //Deberia ser 3
+}

@@ -1,0 +1,176 @@
+package parser;
+
+import AST.*;
+import AST.Program;
+import java.util.*;
+import java_cup.runtime.*;
+import java_cup.runtime.ComplexSymbolFactory.ComplexSymbol;
+import java_cup.runtime.ComplexSymbolFactory.Location;
+import programa.GestorErrores;
+
+class Parser;
+
+parser code {:
+    /**********************************************************************
+     * Sobrecarga de métodos para gestionar los errores que se localicen. *
+     **********************************************************************/
+     private GestorErrores gestorErrores;
+
+    public Parser(java_cup.runtime.Scanner s, java_cup.runtime.SymbolFactory sf, GestorErrores gestorErr) {
+        super(s,sf);
+        this.gestorErrores = gestorErr;
+    }
+
+    @Override
+    public void report_error(String message, Object info) {
+        if (info instanceof Symbol) {
+            ComplexSymbol token = (ComplexSymbol) info;
+            Location l = token.getLeft();
+            if (l != null) {
+                gestorErrores.agregarError(l.getLine(), l.getColumn(),message);
+            }
+        } else {
+            gestorErrores.agregarError(message);
+        }
+    }
+
+    @Override
+    public void report_fatal_error(String message, Object info) throws Exception {
+        report_error(message,info);
+        done_parsing();
+    }
+
+    @Override
+    public void syntax_error(Symbol cur_token) {
+        String mensajeError = "Error de sintaxis: se encontró '" + cur_token.value + "' pero no era lo esperado.";
+        report_error(mensajeError, cur_token);
+    }
+
+    @Override
+    public void unrecovered_syntax_error(Symbol cur_token) throws Exception {
+        String mensajeError = "Error crítico de sintaxis: no se pudo recuperar después de '" + cur_token.value + "'.";
+        report_fatal_error(mensajeError,cur_token);         
+    }
+
+    
+:}
+
+///* Terminales *///
+/* Palabras Reservadas */
+terminal        MAIN, IF, ELSE, WHILE, FOR, READ, WRITE, INT, BOOLEAN, CONST, RETURN, TUPLA, DEF, TRUE, FALSE, GET;
+
+/* Operadores */
+terminal        ADD, SUB, MUL, ASSIGN, EQ, NEQ, LT, GT, AND, OR, NOT;
+
+/* Delimitadores */
+terminal       LPAREN, RPAREN, LLLAVE, RLLAVE, COMA, PUNTOYCOMA, PUNTO;
+
+/* Identificadores */
+terminal String IDENTIFIER;
+terminal String INT_LITERAL;
+
+/* No terminales */
+non terminal Program            Program;
+non terminal MainClass          MainClass;
+non terminal StatementList      StatementList;
+non terminal Statement          Statement;
+non terminal AssignStatement    AssignStatement;
+non terminal ExpressionList     ExpressionList;
+non terminal Expression         Expression;
+non terminal Condition          Condition;
+non terminal ParamList          ParamList;
+non terminal Param              Param;
+non terminal Type               Type;
+non terminal FunctionDef        FunctionDef;
+non terminal Identifier 	  Identifier;
+
+//Mi versión de los precedence                  INT Identifier:iden1 ASSIGN Expression:expr1
+precedence left     OR, AND;
+precedence right    NOT;
+precedence left     EQ, NEQ;
+precedence left     LT, GT;
+precedence left     ADD, SUB;
+precedence left     MUL;
+precedence right    ELSE;
+
+/* Gramática */
+
+Program ::= MainClass:main {: RESULT = new Program(main, mainxleft); :};
+
+MainClass ::= MAIN LPAREN RPAREN LLLAVE StatementList:stateList RLLAVE {: RESULT = new MainClass(stateList,stateListxleft); :};                 
+
+StatementList ::=   StatementList:aux Statement:state {: StatementList stateList = aux; stateList.add(state); RESULT = stateList; :}
+                    | Statement:state {: 
+	            			StatementList stateList = new StatementList(statexleft); 
+	            			stateList.add(state); 
+	            			RESULT = stateList; 
+                                        :};
+
+Statement ::= IF LPAREN Condition:cond RPAREN LLLAVE StatementList:stateList1 RLLAVE ELSE LLLAVE StatementList:stateList2 RLLAVE   {: RESULT = new If(cond, stateList1, stateList2, condxleft); :}
+            | IF LPAREN Condition:cond RPAREN LLLAVE StatementList:stateList RLLAVE    {: RESULT = new If(cond, stateList, null, condxleft); :}
+            | WHILE LPAREN Condition:cond RPAREN LLLAVE StatementList:stateList RLLAVE {: RESULT = new While(cond, stateList, condxleft); :}
+            | FOR LPAREN AssignStatement:assStat PUNTOYCOMA Condition:cond PUNTOYCOMA Identifier:iden ASSIGN Expression:expr RPAREN LLLAVE StatementList:stateList RLLAVE  {: RESULT = new For(assStat, cond, iden, expr, stateList,assStatxleft); :}
+            | READ LPAREN Identifier:iden RPAREN PUNTOYCOMA                            {: RESULT = new Read(iden, idenxleft); :}
+            | WRITE LPAREN Expression:expr RPAREN PUNTOYCOMA                           {: RESULT = new Write(expr, exprxleft); :}
+            | AssignStatement:asState PUNTOYCOMA                                       {: RESULT = (Statement)asState; :}
+            | FunctionDef:funcDef                                                      {: RESULT = funcDef; :}
+            | TUPLA Identifier:ident ASSIGN LPAREN Expression:expr1 COMA Expression:expr2 RPAREN PUNTOYCOMA   {: RESULT = new CrearTupla(ident, expr1, expr2, identxleft); :}
+            | error:e {: 
+                List<Integer> expected = expected_token_ids();
+                List<String> expectedTokens = new ArrayList<>();
+                for (Integer id : expected) {
+                    expectedTokens.add(parser.symbl_name_from_id(id));
+                }
+                gestorErrores.agregarErrorConTokensEsperados(exleft.getLine(), exleft.getColumn(), "Error recuperado en Statement", expectedTokens);
+            :} PUNTOYCOMA ;
+
+AssignStatement ::= Identifier:iden ASSIGN Expression:expr                    {: RESULT = new Assign(iden, expr, idenxleft); :}
+                  | CONST Type:ty Identifier:iden ASSIGN Expression:expr      {: RESULT = new Const(ty, iden, expr, tyxleft); :}
+                  | Type:ty Identifier:iden ASSIGN Expression:expr             {: RESULT = new VarDecl(ty, iden, expr, tyxleft); :};      
+
+FunctionDef ::=
+      DEF Identifier:iden LPAREN ParamList:paramList RPAREN LLLAVE StatementList:stateList RLLAVE {: RESULT = new FunctionDef(null,iden, paramList, stateList, null, idenxleft); :}
+      | DEF Identifier:iden LPAREN RPAREN LLLAVE StatementList:stateList RLLAVE {: RESULT = new FunctionDef(null,iden, null, stateList, null, idenxleft); :}
+      | DEF Type:t Identifier:iden LPAREN ParamList:paramList RPAREN LLLAVE StatementList:stateList RETURN Expression:expr PUNTOYCOMA RLLAVE {: RESULT = new FunctionDef(t,iden, paramList, stateList, expr, idenxleft); :}
+      | DEF Type:t Identifier:iden LPAREN RPAREN LLLAVE StatementList:stateList RETURN Expression:expr PUNTOYCOMA RLLAVE {: RESULT = new FunctionDef(t,iden, null, stateList, expr, idenxleft); :};
+
+ParamList ::=       ParamList:paramList COMA Param:param {: paramList.add(param); RESULT = paramList; :}
+                    | Param:param {: 
+	            			ParamList paramList = new ParamList(paramxleft); 
+	            			paramList.add(param); 
+	            			RESULT = paramList;
+            			:};
+
+Param ::=   Type:ty Identifier:iden                    {: RESULT = new Param(ty, iden, tyxleft); :};
+
+Condition ::= Expression:expr1 EQ Expression:expr2      {: RESULT = new Equal(expr1, expr2, expr1xleft); :}
+            | Expression:expr1 NEQ Expression:expr2     {: RESULT = new NotEqual(expr1, expr2, expr1xleft); :} 
+            | Expression:expr1 LT Expression:expr2      {: RESULT = new LessThan(expr1, expr2, expr1xleft); :} 
+            | Expression:expr1 GT Expression:expr2      {: RESULT = new GreaterThan(expr1, expr2, expr1xleft); :} 
+            | Expression:expr1 AND Expression:expr2     {: RESULT = new And(expr1, expr2, expr1xleft); :}
+            | Expression:expr1 OR Expression:expr2      {: RESULT = new Or(expr1,  expr2, expr1xleft); :}
+            | NOT Expression:expr                       {: RESULT = new Not(expr, exprxleft); :};
+			         
+
+ExpressionList ::=  ExpressionList:aux COMA Expression:expr {:ExpressionList exprList =  aux; exprList.add(expr); RESULT = exprList; :}
+                    | Expression:expr {: 
+	            			ExpressionList exprList = new ExpressionList(exprxleft); 
+	            			exprList.add(expr); 
+	            			RESULT = exprList;
+            			:};
+
+Expression ::= Expression:expr1 ADD Expression:expr2                       {: RESULT = new Add(expr1, expr2, expr1xleft); :}
+             | Expression:expr1 SUB Expression:expr2                       {: RESULT = new Sub(expr1, expr2, expr1xleft); :} 
+             | Expression:expr1 MUL Expression:expr2                       {: RESULT = new Mul(expr1, expr2, expr1xleft); :}
+             | LPAREN Expression:expr RPAREN                               {: RESULT = expr; :}             
+             | Identifier:ident PUNTO GET LPAREN Expression:expr RPAREN    {: RESULT = new GetTupla(ident,  expr, identxleft); :}
+             | Identifier:ident LPAREN ExpressionList:exprList RPAREN      {: RESULT = new LlamadaFuncion(ident, exprList, identxleft);:}
+             | INT_LITERAL:int_lit                                         {: RESULT = new IntLiteral((int)Integer.parseInt(int_lit), int_litxleft); :}
+             | TRUE:tr                                                     {: RESULT = new True(trxleft); :}        
+             | FALSE:fal                                                   {: RESULT = new False(falxleft); :}
+             | IDENTIFIER:ident                                            {: RESULT = new IdentifierExp(ident, identxleft); :};
+
+Type ::=    INT:in          {: RESULT = new IntegerType(inxleft); :}
+            | BOOLEAN:bool  {: RESULT = new BooleanType(boolxleft); :};
+
+Identifier ::= IDENTIFIER:ident                         {: RESULT = new Identifier(ident,identxleft); :};

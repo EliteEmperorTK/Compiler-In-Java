@@ -1,0 +1,18 @@
+/*
+                                            CASO INCORRECTO 2
+    Este codigo no funciona bien porque se intenta retornar un valor en una funcion que no se espera que devuelva ninguno.
+*/
+
+main() {
+    // Declaración y asignación de variables
+    int x = 5;
+    
+
+    //Sin parámetros
+    def write10(){
+        write(10);      //Simplemente escribe 10
+        return 5;       //Se intenta devolver erroneamente un valor cuando la funcion no debe retornar nada.
+    }
+
+    boolean y = true;
+}

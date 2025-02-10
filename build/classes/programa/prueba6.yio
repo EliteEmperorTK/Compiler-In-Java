@@ -1,0 +1,19 @@
+/*
+                                            CASO INCORRECTO 3
+    Este codigo no funciona bien porque se declara una variable en el if (que esta en el ambito local del if) y se intenta usar fuera del if. Como la
+    variable esta declarada localmente dentro del if, no existe fuera de este y, por ende, da un error de variable no declarada.
+*/
+
+main() {
+    // Declaración y asignación de variables
+    int x = 5;
+    
+    //If con declaracion local de variable
+    if(x == 5){
+        int aux = 3;
+    }
+
+    write(aux);
+
+    boolean y = true;
+}
