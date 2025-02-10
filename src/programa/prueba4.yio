@@ -1,0 +1,19 @@
+/*
+                                            CASO INCORRECTO 1
+    Este codigo no funciona bien porque se intenta usar la variable x dentro de la funcion sumar. Como la funcion sumar esta en un ambito diferente a 
+    la variable x (x esta en el ambito del main y la funcion sumar tiene su propio ambito), da un error por variable no inicializada.
+*/
+
+main() {
+    // Declaracion y asignación de variables
+    int x = 5;
+    
+
+    //Definimos una funcion que simplemente suma dos valores y los guarda en un valor que se retorna 
+    def int sumar(int a, int b){
+        x = a+b;
+        return x;
+    }
+
+    boolean y = true;
+}

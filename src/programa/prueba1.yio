@@ -1,0 +1,21 @@
+/*
+                                            CASO CORRECTO 1
+    Caso simple de asignacion de variables seguida de un if para comprobar el correcto funcionamiento de los aspectos basicos del
+    programa.
+*/
+
+main() {
+    // Declaracion y asignacion de variables
+    int x = 2;
+    x = x + 4;
+    boolean y = false;
+
+    // Uso de un condicional
+    if (y==true) {
+        // Salida por pantalla
+        write(x);               //Aqui no deberia entrarse
+    } else {
+        write(0);               //Se escribe 0 y luego x (6)
+        write(x);
+    }
+}

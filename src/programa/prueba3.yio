@@ -1,0 +1,88 @@
+/*
+                                            CASO CORRECTO 3
+    Este codigo de prueba implementa todas las distintas funcionalidades que ofrece nuestro codigo. Es el caso mas completo posible (sin contar
+    posibles repeticiones de las mismas funcionalidades) que puede existir dada nuestra sintaxis. Por esta razon es el que esta actualmente como opcion
+    predeteminada al ejecutar el compilador.
+*/
+
+main() {
+    // Declaracion y asignacion de variables
+    int x = 5;
+    boolean y = true;
+
+    // Uso de un condicional
+    if (y==true) {
+        // Salida por pantalla
+        write(x);               //Se deberia escribir x (5)
+    } else {
+        write(0);               //Aqui no deberia entrarse
+    }
+
+    //Definimos una funcion que simplemente suma dos valores y los guarda en un valor que se retorna 
+    def int sumar(int a, int b){
+        int v = a+b;
+        return v;
+    }
+
+    x = 4;
+    
+    int g = 3;
+    int h = 5;
+
+    h = sumar(g,h);
+    write(h);       //Deberia ser 8
+
+    tupla t = (5,true);
+    write(t.get(0));        //Deberia ser 5
+    write(t.get(1));        //Deberia ser true (1)
+
+
+    const int con = 2;
+    write(con);         //escribe 2
+
+    for(int idx = 0; idx < x; idx = idx+1){
+        write(idx); //0, 1, ...
+    }
+
+    //Sin parámetros
+    def write10(){
+        write(10);      //Simplemente escribe 10 al ser llamada y no retorna nada
+    }
+
+    /*
+    comentarios
+    multi
+    línea
+    */
+
+    int a = 2;
+    int b = 3;
+    int c = a-b;
+    write(c);       //c = -1
+    c = a*a*b;
+    write(c);       //c = 6
+
+    boolean bool1 = true;
+    boolean bool2 = false;
+    //Devuelve false
+    if(bool1&&bool2){
+        write(true);     //Aqui no entra
+    }
+
+    //Devuelve true
+    if(bool1||bool2){
+        write(true);    //Bool1 es true asi que escribe true (1)
+    } else{
+        write(false);
+    }
+
+    
+    if(!bool2){
+        write(true);   //Devuelve true (porque bool2 es falso)
+    }
+
+    //Leemos un entero por teclado
+    int z = 0;
+    read(z);            //Sobreescribimos el valor de z con lo que se pase por parametro
+    write(z);           //Se escribe z (si hemos introducido 7, se escribiria 7)
+}
